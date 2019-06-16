@@ -387,11 +387,6 @@ void copy(in ubyte[] src, ubyte[] tgt)
     tgt[0..$] = src[0..$];
 }
 
-void copy16(in ushort[] src, ushort[] tgt)
-{
-    tgt[0..$] = src[0..$];
-}
-
 void conv_y2ya(in ubyte[] src, ubyte[] tgt)
 {
     for (int k, t;   k < src.length;   k+=1, t+=2) {
