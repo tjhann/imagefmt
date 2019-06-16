@@ -79,10 +79,40 @@ IFInfo read_png_info(Reader* rc)
     info.e = read_png_header(rc, head);
     info.w = head.w;
     info.h = head.h;
-    info.c = channels(head.colortype);   // FIXME check for tRNS if indexed
-    if (info.c == 0 && !info.e)
+    info.c = channels(head.colortype);
+    if (head.colortype == CTYPE.idx && have_tRNS(rc))
+        info.c = 4;
+    else if (info.c == 0 && !info.e)
         info.e = ERROR.data;
     return info;
+}
+
+bool have_tRNS(Reader* rc)
+{
+    ubyte[12] chunkmeta;
+    read_block(rc, chunkmeta[4..$]);  // next chunk's len and type
+
+    while (!rc.fail) {
+        uint len = load_u32be(chunkmeta[4..8]);
+        if (len > int.max)
+            return false;
+        switch (cast(char[]) chunkmeta[8..12]) {
+            case "tRNS":
+                return true;
+            case "IDAT":
+            case "IEND":
+                return false;
+            default:
+                while (len > 0) {
+                    ubyte[] slice = read_slice(rc, len);
+                    if (!slice.length)
+                        return false;
+                    len -= slice.length;
+                }
+                read_block(rc, chunkmeta[0..$]); // crc | len, type
+        }
+    }
+    return false;
 }
 
 ubyte read_png_header(Reader* rc, out PNGHeader head)
@@ -181,7 +211,7 @@ ubyte read_chunks(PNGDecoder* dc)
 
     read_block(dc.rc, dc.chunkmeta[4..$]);  // next chunk's len and type
 
-    while (stage != STAGE.IEND_done) {
+    while (stage != STAGE.IEND_done && !dc.rc.fail) {
         uint len = load_u32be(dc.chunkmeta[4..8]);
         if (len > int.max)
             return ERROR.data;

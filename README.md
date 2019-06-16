@@ -3,8 +3,7 @@
 Image loader and saver for simple needs with support for custom IO
 and allocators.  Independent of the garbage collector.
 
-API/behaviour still needs some minor details worked out...
-and this will be @nogc when etc.c.zlib gets it.
+This will be `@nogc` when etc.c.zlib gets it.
 
 **Decoders:**
 - PNG, 8-bit and 16-bit interlaced and paletted (+`tRNS` chunk)
@@ -34,4 +33,4 @@ IFInfo info = read_info("fsoc.tga");
 printf("size: %d x %d   components: %d\n", info.w, info.h, info.c);
 ```
 
-**Tipjar**: `nano_1xeof5x1ukki4awa7fp9gyb3qsymmrr4s3i8o63okzdq3bhsdj56nefm9shs`
+**Tipjar:** `nano_1xeof5x1ukki4awa7fp9gyb3qsymmrr4s3i8o63okzdq3bhsdj56nefm9shs`
