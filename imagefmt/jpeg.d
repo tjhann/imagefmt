@@ -262,7 +262,7 @@ ubyte read_markers(ref JPEGDecoder dc)
 // DHT -- define huffman tables
 ubyte read_huffman_tables(ref JPEGDecoder dc)
 {
-    ubyte[19] tmp;  // FIXME this could be just 17 bytes
+    ubyte[17] tmp;
     int len = read_u16be(dc.rc) - 2;
     if (dc.rc.fail) return ERROR.stream;
 
@@ -565,7 +565,6 @@ immutable ubyte[64] dezigzag = [
 ubyte decode_block(ref JPEGDecoder dc, ref Component comp, in ref ubyte[64] qtable,
                                                               out short[64] result)
 {
-    result = 0; // FIXME delete
     ubyte e;
     const ubyte t = decode_huff(dc, dc.dc_tables[comp.dc_table], e);
     if (e) return e;
@@ -647,8 +646,8 @@ ubyte nextbit(ref JPEGDecoder dc, ref ubyte e)
                 return 0;
             }
         }
+        if (dc.rc.fail) e = ERROR.stream;
     }
-    if (dc.rc.fail) e = ERROR.stream;   // TODO remove?
 
     ubyte r = dc.cb >> 7;
     dc.cb <<= 1;
