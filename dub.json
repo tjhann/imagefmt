@@ -1,0 +1,10 @@
+{
+    "authors": ["Tero Hänninen"],
+    "name" : "imagefmt",
+    "description" : "Image loading/saving. @nogc",
+    "license": "BSD-2-clause",
+    "targetType": "library",
+    "targetName": "imagefmt",
+    "importPaths": [ "." ],
+    "sourcePaths": [ "imagefmt" ],
+}
