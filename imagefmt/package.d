@@ -117,6 +117,7 @@ immutable string[ERROR.max + 1] IF_ERROR = [
     ERROR.zstream  : "zlib stream error",
 ];
 
+/// Reads basic information about an image.
 IFInfo read_info(in char[] fname)
 {
     IFInfo info;
@@ -143,6 +144,7 @@ IFInfo read_info(FILE* f)
     return read_info(io);
 }
 
+/// Reads basic information about an image.
 IFInfo read_info(Read io)
 {
     ubyte[256] iobuf;
@@ -158,6 +160,7 @@ IFInfo read_info(Read io)
     return info;
 }
 
+/// Reads basic information about an image.
 IFInfo read_info(in ubyte[] buf)
 {
     IFInfo info;
@@ -173,6 +176,7 @@ IFInfo read_info(in ubyte[] buf)
     return info;
 }
 
+/// Reads an image file, detecting its type.
 IFImage read_image(in char[] fname, in int c = 0, in int bpc = 8)
 {
     IFImage image;
@@ -200,6 +204,7 @@ IFImage read_image(FILE* f, in int c = 0, in int bpc = 8)
     return image;
 }
 
+/// Reads an image using given io functions.
 IFImage read_image(Read io, in int c = 0, in int bpc = 8)
 {
     IFImage image;
@@ -220,6 +225,7 @@ IFImage read_image(Read io, in int c = 0, in int bpc = 8)
     return image;
 }
 
+/// Reads an image from buf.
 IFImage read_image(in ubyte[] buf, in int c = 0, in int bpc = 8)
 {
     IFImage image;
