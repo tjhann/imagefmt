@@ -12,6 +12,7 @@ import imagefmt.jpeg;
 //@nogc nothrow:
 nothrow:
 
+/// Basic image information.
 struct IFInfo {
     int w;              /// width
     int h;              /// height
@@ -19,6 +20,7 @@ struct IFInfo {
     ubyte e;            /// error code or zero
 }
 
+/// Image returned from the read functions. Data is in buf8 or buf16.
 struct IFImage {
     int w;              /// width
     int h;              /// height
@@ -27,10 +29,11 @@ struct IFImage {
     ubyte bpc;          /// bits per channel, 8 or 16
     ubyte e;            /// error code or zero
     union {
-        ubyte[] buf8;
-        ushort[] buf16;
+        ubyte[] buf8;       ///
+        ushort[] buf16;     ///
     }
 
+    /// Frees the image data.
     void free() {
         _free(buf8.ptr);
         buf8 = null;
