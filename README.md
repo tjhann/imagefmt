@@ -3,8 +3,6 @@
 Image loader and saver for simple needs with support for custom IO
 and allocators.  Independent of the garbage collector.
 
-This will be `@nogc` when etc.c.zlib gets it.
-
 **Decoders:**
 - PNG, 8-bit and 16-bit interlaced and paletted (+`tRNS` chunk)
 - BMP, 8-bit

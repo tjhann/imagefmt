@@ -8,8 +8,7 @@ module imagefmt.png;
 import etc.c.zlib;
 import imagefmt;
 
-//@nogc nothrow package:
-nothrow:
+@nogc nothrow package:
 
 struct PNGHeader {
     int     w;
@@ -852,8 +851,7 @@ void flush_idat(ref PNGEncoder ec)      // writes an idat chunk
 struct CRC32 {
     uint r = 0xffff_ffff;
 
-//    @nogc nothrow:
-    nothrow:
+    @nogc nothrow:
 
     void put(in ubyte[] data)
     {

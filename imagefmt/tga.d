@@ -4,8 +4,7 @@ module imagefmt.tga;
 
 import imagefmt;
 
-//@nogc nothrow package:
-nothrow:
+@nogc nothrow package:
 
 struct TGAHeader {
     int w;

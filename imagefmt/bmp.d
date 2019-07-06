@@ -4,8 +4,7 @@ module imagefmt.bmp;
 
 import imagefmt;
 
-//@nogc nothrow package:
-nothrow:
+@nogc nothrow package:
 
 struct BMPHeader {
     int w;              // can be negative

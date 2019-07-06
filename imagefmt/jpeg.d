@@ -5,8 +5,7 @@ module imagefmt.jpeg;
 import std.math : ceil;
 import imagefmt;
 
-//@nogc nothrow package:
-nothrow:
+@nogc nothrow package:
 
 struct JPEGDecoder {
     Reader* rc;

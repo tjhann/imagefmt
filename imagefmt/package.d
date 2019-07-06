@@ -9,8 +9,7 @@ import imagefmt.tga;
 import imagefmt.png;
 import imagefmt.jpeg;
 
-//@nogc nothrow:
-nothrow:
+@nogc nothrow:
 
 /// Basic image information.
 struct IFInfo {
@@ -33,6 +32,8 @@ struct IFImage {
         ushort[] buf16;     ///
     }
 
+    @nogc:
+
     /// Frees the image data.
     void free() {
         _free(buf8.ptr);
@@ -44,19 +45,19 @@ struct IFImage {
 struct Read {
     void* stream;
     /// returns number of bytes read; tries to read n bytes
-    int function(void* stream, ubyte* buf, int n) /*@nogc*/ nothrow read;
+    int function(void* stream, ubyte* buf, int n) @nogc nothrow read;
     /// returns 0 on success, -1 on error;
     /// sets cursor to off(set) from current position
-    int function(void* stream, int off) /*@nogc*/ nothrow seek;
+    int function(void* stream, int off) @nogc nothrow seek;
 }
 
 /// Write interface.
 struct Write {
     void* stream;
     /// returns the number of bytes written; tries to write all of buf.
-    int function(void* stream, ubyte[] buf) /*@nogc*/ nothrow write;
+    int function(void* stream, ubyte[] buf) @nogc nothrow write;
     /// returns 0 on success, -1 on error; forces a write of still unwritten data.
-    int function(void* stream) /*@nogc*/ nothrow flush;
+    int function(void* stream) @nogc nothrow flush;
 }
 
 int fileread(void* st, ubyte* buf, int n)
@@ -346,8 +347,8 @@ ubyte[] bpc16to8(ushort[] b16)
     return p8[0 .. b8.length];
 }
 
-alias conv8 = void function(in ubyte[] src, ubyte[] tgt) /*@nogc*/ nothrow;
-alias conv16 = void function(in ushort[] src, ushort[] tgt) /*@nogc*/ nothrow;
+alias conv8 = void function(in ubyte[] src, ubyte[] tgt) @nogc nothrow;
+alias conv16 = void function(in ushort[] src, ushort[] tgt) @nogc nothrow;
 
 void* getconv(in int sc, in int tc, in int bpc)
 {
@@ -1090,7 +1091,7 @@ struct NTString {
     char[255]    tmp;
     bool         heap;
 
-    /*@nogc*/ nothrow:
+    @nogc nothrow:
 
     // Leaves ptr null on malloc error.
     this(in char[] s)
