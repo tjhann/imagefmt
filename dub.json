@@ -6,5 +6,5 @@
     "targetType": "library",
     "targetName": "imagefmt",
     "importPaths": [ "." ],
-    "sourcePaths": [ "imagefmt" ],
+    "sourcePaths": [ "imagefmt" ]
 }
