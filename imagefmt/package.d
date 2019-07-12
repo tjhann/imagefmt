@@ -32,7 +32,7 @@ struct IFImage {
         ushort[] buf16;     ///
     }
 
-    @nogc:
+    @nogc nothrow:
 
     /// Frees the image data.
     void free() {
