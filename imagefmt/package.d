@@ -1120,3 +1120,51 @@ struct NTString {
             _free(cast(void*) ptr);
     }
 }
+
+unittest {
+    string png_path = "tests/pngsuite/";
+    string tga_path = "tests/pngsuite-tga/";
+    string bmp_path = "tests/pngsuite-bmp/";
+
+    static files = [
+        "basi0g08",    // PNG image data, 32 x 32, 8-bit grayscale, interlaced
+        "basi2c08",    // PNG image data, 32 x 32, 8-bit/color RGB, interlaced
+        "basi3p08",    // PNG image data, 32 x 32, 8-bit colormap, interlaced
+        "basi4a08",    // PNG image data, 32 x 32, 8-bit gray+alpha, interlaced
+        "basi6a08",    // PNG image data, 32 x 32, 8-bit/color RGBA, interlaced
+        "basn0g08",    // PNG image data, 32 x 32, 8-bit grayscale, non-interlaced
+        "basn2c08",    // PNG image data, 32 x 32, 8-bit/color RGB, non-interlaced
+        "basn3p08",    // PNG image data, 32 x 32, 8-bit colormap, non-interlaced
+        "basn4a08",    // PNG image data, 32 x 32, 8-bit gray+alpha, non-interlaced
+        "basn6a08",    // PNG image data, 32 x 32, 8-bit/color RGBA, non-interlaced
+    ];
+
+    char[256] path;
+
+    static char[] buildpath(ref char[256] path, in char[] dir, in char[] file, in char[] ext)
+    {
+        path[0 .. dir.length] = dir[0..$];
+        path[dir.length .. dir.length + file.length] = file[0..$];
+        const size_t ei = dir.length + file.length;
+        path[ei .. ei + ext.length] = ext[0..$];
+        return path[0 .. ei + ext.length];
+    }
+
+    foreach (file; files) {
+        //writefln("%s", file);
+        auto a = read_image(buildpath(path, png_path, file, ".png"), 4);
+        auto b = read_image(buildpath(path, tga_path, file, ".tga"), 4);
+        auto c = read_image(buildpath(path, bmp_path, file, ".bmp"), 4);
+        scope(exit) {
+            a.free();
+            b.free();
+            c.free();
+        }
+        assert(a.e + b.e + c.e == 0);
+        assert(a.w == b.w && a.w == c.w);
+        assert(a.h == b.h && a.h == c.h);
+        assert(a.buf8.length == b.buf8.length && a.buf8.length == c.buf8.length);
+        assert(a.buf8[0..$] == b.buf8[0..$], "png/tga");
+        assert(a.buf8[0..$] == c.buf8[0..$], "png/bmp");
+    }
+}
