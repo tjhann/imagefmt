@@ -293,7 +293,7 @@ ubyte read_chunks(PNGDecoder* dc)
         }
     }
 
-    return 0;
+    return dc.rc.fail ? ERROR.stream : 0;
 }
 
 ubyte read_idat_chunks(PNGDecoder* dc, in uint len)
