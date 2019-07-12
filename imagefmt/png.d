@@ -790,9 +790,9 @@ ubyte write_idat(ref PNGEncoder ec)
 
     sete(0);
 
-    const size_t tsize = ec.w * ec.tchans * ec.h;
+    const size_t sbufsz = ec.w * ec.schans * ec.h;
 
-    for (size_t si; si < tsize; si += slinesz) {
+    for (size_t si; si < sbufsz; si += slinesz) {
         convert(ec.buf[si .. si + slinesz], cline[1..$]);
 
         // these loops could be merged with some extra space...
