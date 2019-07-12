@@ -285,8 +285,8 @@ ubyte write_tga_idat(Writer* wc, in int w, in int h, in ubyte[] buf, in int scha
     ubyte[] tline      = workbuf[0..tlinesz];
     ubyte[] compressed = workbuf[tlinesz .. tlinesz + (tlinesz + maxpckts)];
 
-    const size_t si_limit = h * slinesz;
-    for (size_t si = (h - 1) * slinesz; si < si_limit; si -= slinesz) {
+    const size_t sbufsz = h * slinesz;
+    for (size_t si = (h - 1) * slinesz; si < sbufsz; si -= slinesz) {
         convert(buf[si .. si + slinesz], tline[0..$]);
         const size_t compsz = rle_compress(tline, compressed, w, tchans);
         write_block(wc, compressed[0..compsz]);
