@@ -30,5 +30,3 @@ scope(exit) a.free();
 IFInfo info = read_info("vine.tga");
 printf("size: %d x %d   components: %d\n", info.w, info.h, info.c);
 ```
-
-**Tipjar:** `nano_1xeof5x1ukki4awa7fp9gyb3qsymmrr4s3i8o63okzdq3bhsdj56nefm9shs`
