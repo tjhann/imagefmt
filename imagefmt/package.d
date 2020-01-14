@@ -744,8 +744,10 @@ void function(Reader* rc, int n) skip;
 
 ubyte init_reader(Reader* rc, Read io, ubyte[] buf)
 {
-    if (io.stream && buf.length < 16)
-        return ERROR.arg;
+    if (buf.length < 16) {
+        if (io.stream) return ERROR.arg;
+        if (!buf.length) return ERROR.nodata;
+    }
     rc.io = io;
     rc.buf = buf.ptr;
     rc.cap = cast(int) buf.length;
