@@ -19,7 +19,8 @@ struct IFInfo {
     ubyte e;            /// error code or zero
 }
 
-/// Image returned from the read functions. Data is in buf8 or buf16.
+/// Image returned from the read functions. Data is in buf8 or buf16. Top-left corner
+/// will be at (0, 0).
 struct IFImage {
     int w;              /// width
     int h;              /// height

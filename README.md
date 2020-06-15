@@ -15,7 +15,7 @@ and allocators.  Independent of the garbage collector.
 - TGA, 8-bit
 
 Returned buffers are 8-bit by default, other options are 16-bit and 8/16-bit
-based on source data.
+based on source data. The top-left corner is always at (0, 0).
 
 ```D
 import imagefmt;
