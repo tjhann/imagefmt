@@ -85,6 +85,23 @@ int fileflush(void* st)
 /// don't reject with a "too large" error.
 ulong MAXIMUM_IMAGE_SIZE = 0x7fff_ffff;
 
+/// Control whether y-axis points up in returned buffers.
+void set_yaxis_up_on_load(bool up)
+{
+    if (up) VERTICAL_ORIENTATION_READ = -1;
+    else    VERTICAL_ORIENTATION_READ = 1;
+}
+
+/// Inform writing functions whether y-axis points up in buffers passed to them.
+void set_yaxis_up_on_save(bool up)
+{
+    if (up) VERTICAL_ORIENTATION_WRITE = -1;
+    else    VERTICAL_ORIENTATION_WRITE = 1;
+}
+
+package int VERTICAL_ORIENTATION_READ   = 1;   // 1 = y-axis down, -1 = y-axis up
+package int VERTICAL_ORIENTATION_WRITE  = 1;   // 1 = y-axis down, -1 = y-axis up
+
 version(IF__CUSTOM_ALLOC) {
     void* if__allocator;
     void* function(void* al, size_t size)            if__malloc;
@@ -1039,6 +1056,21 @@ void write_block(Writer* wc, in ubyte[] block)
 }
 
 /* --------------- helper constructs --------------- */
+
+ubyte flip_vertically(int w, int h, int c, ubyte[] buf)
+{
+    ubyte e;
+    ubyte[] swp = new_buffer(w * c, e);
+    scope(exit) _free(swp.ptr);
+    if (e) return e;
+    int stride = w * c;
+    for (int i = 0, j = (h-1) * stride; i < j; i += stride, j -= stride) {
+        swp[0 .. stride] = buf[i .. i + stride];
+        buf[i .. i + stride] = buf[j .. j + stride];
+        buf[j .. j + stride] = swp;
+    }
+    return e;
+}
 
 int findlast(in char[] s, in char c)
 {

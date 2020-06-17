@@ -187,6 +187,9 @@ ubyte read_jpeg(Reader* rc, out IFImage image, in int reqchans, in int reqbpc)
     ubyte[] buf = dc.reconstruct(e);
     if (e) return e;
 
+    if (VERTICAL_ORIENTATION_READ == -1)
+        e = flip_vertically(dc.width, dc.height, dc.tchans, buf);
+
     image.w   = dc.width;
     image.h   = dc.height;
     image.c   = cast(ubyte) dc.tchans;
@@ -661,8 +664,8 @@ ubyte[] reconstruct(in ref JPEGDecoder dc, ref ubyte e)
 
     switch (dc.num_comps * 10 + dc.tchans) {
         case 34, 33:
-            // Use specialized bilinear filtering functions for the frequent cases where
-            // Cb & Cr channels have half resolution.
+            // Use specialized bilinear filtering functions for the frequent cases
+            // where Cb & Cr channels have half resolution.
             if (dc.comps[0].sfx <= 2 && dc.comps[0].sfy <= 2 &&
                 dc.comps[0].sfx + dc.comps[0].sfy >= 3       &&
                 dc.comps[1].sfx == 1 && dc.comps[1].sfy == 1 &&
@@ -687,7 +690,7 @@ ubyte[] reconstruct(in ref JPEGDecoder dc, ref ubyte e)
                 foreach (j; 0 .. dc.height) {
                     const size_t mi = j / dc.comps[0].sfy;
                     const size_t si = (mi == 0 || mi >= (dc.height-1)/dc.comps[0].sfy)
-                              ? mi : mi - 1 + s * 2;
+                                    ? mi : mi - 1 + s * 2;
                     s = s ^ 1;
 
                     const size_t cs = dc.num_mcu_x * dc.comps[1].sfx * 8;

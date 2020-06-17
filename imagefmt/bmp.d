@@ -198,12 +198,13 @@ ubyte read_bmp(Reader* rc, out IFImage image, in int reqchans, in int reqbpc)
     auto convert = cast(conv8) getconv(sfmt, tchans, 8);
 
     const int slinesz = head.w * bytes_pp;    // without padding
-    const int srcpad  = 3 - ((slinesz-1) % 4);
     const int tlinesz = head.w * tchans;
-    const int tstride = head.h < 0 ? tlinesz : -tlinesz;
+    const int srcpad  = 3 - ((slinesz-1) % 4);
     const int height  = abs(head.h);
-    const int ti_start  = head.h < 0 ? 0 : (head.h-1) * tlinesz;
-    const uint ti_limit = height * tlinesz;
+    const bool flip   = (head.h < 0) ^ (VERTICAL_ORIENTATION_READ == 1);
+    const int tstride   = flip ? -tlinesz               : tlinesz;
+    const int ti_start  = flip ? (height-1) * tlinesz   : 0;
+    const uint ti_limit = height * tlinesz;     // unsigned for a reason
 
     ubyte e;
 
@@ -360,8 +361,9 @@ ubyte write_bmp(Writer* wc, int w, int h, in ubyte[] buf, int reqchans)
     auto convert =
         cast(conv8) getconv(schans, tchans == 3 ? CHANS.bgr : CHANS.bgra, 8);
 
-    const size_t slinesz = cast(size_t) w * schans;
-    size_t si = cast(size_t) h * slinesz;
+    int slinesz = w * schans;
+    int sstride = -slinesz * VERTICAL_ORIENTATION_WRITE;
+    int si      = (h-1) * slinesz * (VERTICAL_ORIENTATION_WRITE == 1);
 
     ubyte e;
     ubyte[] tline = new_buffer(tlinesz + pad, e);
@@ -370,9 +372,9 @@ ubyte write_bmp(Writer* wc, int w, int h, in ubyte[] buf, int reqchans)
         goto finish;
 
     foreach (_; 0..h) {
-        si -= slinesz;
         convert(buf[si .. si + slinesz], tline[0..tlinesz]);
         write_block(wc, tline[0..$]);
+        si += sstride;
     }
 
     if (wc.fail)

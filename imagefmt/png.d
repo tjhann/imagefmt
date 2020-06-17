@@ -335,6 +335,7 @@ ubyte read_idat8(PNGDecoder* dc)
     const size_t xlinesz    = dc.w * dc.schans * dc.indexed;
     const size_t redlinesz  = dc.w * dc.tchans * dc.interlaced;
     const size_t workbufsz  = 2 * uclinesz + xlinesz + redlinesz;
+    const bool flp          = VERTICAL_ORIENTATION_READ == -1;
 
     ubyte e;
     ubyte[] cline;      // current line
@@ -353,14 +354,15 @@ ubyte read_idat8(PNGDecoder* dc)
 
     if (!dc.interlaced) {
         const size_t tlinelen = dc.w * dc.tchans;
-        size_t ti;
+        const size_t tstride = flp ? -tlinelen           : tlinelen;
+        size_t ti            = flp ? (dc.h-1) * tlinelen : 0;
         if (dc.indexed) {
             foreach (_; 0 .. dc.h) {
                 uncompress(dc, cline); // cline[0] is the filter type
                 recon(cline, pline, filterstep);
                 depalette(dc.palette, dc.transparency, cline[1..$], xline);
                 convert(xline, result[ti .. ti + tlinelen]);
-                ti += tlinelen;
+                ti += tstride;
                 swap(cline, pline);
             }
         } else {
@@ -368,16 +370,17 @@ ubyte read_idat8(PNGDecoder* dc)
                 uncompress(dc, cline); // cline[0] is the filter type
                 recon(cline, pline, filterstep);
                 convert(cline[1..$], result[ti .. ti + tlinelen]);
-                ti += tlinelen;
+                ti += tstride;
                 swap(cline, pline);
             }
         }
     } else {    // Adam7 interlacing
         const size_t[7] redw = a7_init_redw(dc.w);
         const size_t[7] redh = a7_init_redh(dc.h);
+        const int dhi = dc.h - 1;   // destination "height index"
 
         foreach (pass; 0 .. 7) {
-            const A7Catapult catapult = a7catapults[pass];
+            const A7Catapult cata = a7catapults[pass];
             const size_t slinelen = redw[pass] * dc.schans;
             const size_t tlinelen = redw[pass] * dc.tchans;
             ubyte[] cln = cline[0 .. redw[pass] * filterstep + 1];
@@ -390,7 +393,7 @@ ubyte read_idat8(PNGDecoder* dc)
                     recon(cln, pln, filterstep);
                     depalette(dc.palette, dc.transparency, cln[1..$], xline);
                     convert(xline[0 .. slinelen], redline[0 .. tlinelen]);
-                    sling(redline, result, catapult, redw[pass], j, dc.w, dc.tchans);
+                    sling(redline, result, cata, redw[pass], j, dc.w, dhi, dc.tchans, flp);
                     swap(cln, pln);
                 }
             } else {
@@ -398,7 +401,7 @@ ubyte read_idat8(PNGDecoder* dc)
                     uncompress(dc, cln); // cln[0] is the filter type
                     recon(cln, pln, filterstep);
                     convert(cln[1 .. 1 + slinelen], redline[0 .. tlinelen]);
-                    sling(redline, result, catapult, redw[pass], j, dc.w, dc.tchans);
+                    sling(redline, result, cata, redw[pass], j, dc.w, dhi, dc.tchans, flp);
                     swap(cln, pln);
                 }
             }
@@ -427,6 +430,7 @@ ubyte read_idat16(PNGDecoder* dc)     // 16-bit is never indexed
     const size_t xlinesz    = dc.w * dc.schans * 2;
     const size_t redlinesz  = dc.w * dc.h * dc.tchans * 2 * dc.interlaced;
     const size_t workbufsz  = 2 * uclinesz + xlinesz + redlinesz;
+    const bool flp          = VERTICAL_ORIENTATION_READ == -1;
 
     // xline is not quite necessary, it could be avoided if the conversion
     // functions were changed to do what line16_from_bytes does.
@@ -448,21 +452,23 @@ ubyte read_idat16(PNGDecoder* dc)     // 16-bit is never indexed
 
     if (!dc.interlaced) {
         const size_t tlinelen = dc.w * dc.tchans;
-        size_t ti;
+        const size_t tstride = flp ? -tlinelen           : tlinelen;
+        size_t ti            = flp ? (dc.h-1) * tlinelen : 0;
         foreach (_; 0 .. dc.h) {
             uncompress(dc, cline); // cline[0] is the filter type
             recon(cline, pline, filterstep);
             line16_from_bytes(cline[1..$], xline);
             convert(xline[0..$], result[ti .. ti + tlinelen]);
-            ti += tlinelen;
+            ti += tstride;
             swap(cline, pline);
         }
     } else {    // Adam7 interlacing
         const size_t[7] redw = a7_init_redw(dc.w);
         const size_t[7] redh = a7_init_redh(dc.h);
+        const int dhi = dc.h - 1;   // destination "height index"
 
         foreach (pass; 0 .. 7) {
-            const A7Catapult catapult = a7catapults[pass];
+            const A7Catapult cata = a7catapults[pass];
             const size_t slinelen = redw[pass] * dc.schans;
             const size_t tlinelen = redw[pass] * dc.tchans;
             ubyte[] cln = cline[0 .. redw[pass] * filterstep + 1];
@@ -474,7 +480,7 @@ ubyte read_idat16(PNGDecoder* dc)     // 16-bit is never indexed
                 recon(cln, pln, filterstep);
                 line16_from_bytes(cln[1 .. $], xline[0 .. slinelen]);
                 convert(xline[0 .. slinelen], redline[0 .. tlinelen]);
-                sling16(redline, result, catapult, redw[pass], j, dc.w, dc.tchans);
+                sling16(redline, result, cata, redw[pass], j, dc.w, dhi, dc.tchans, flp);
                 swap(cln, pln);
             }
         }
@@ -499,20 +505,20 @@ void line16_from_bytes(in ubyte[] src, ushort[] tgt)
     }
 }
 
-void sling(in ubyte[] redline, ubyte[] result, A7Catapult cata, in size_t redw,
-                                        in size_t j, in int dcw, in int tchans)
+void sling(in ubyte[] redline, ubyte[] result, A7Catapult cata, size_t redw,
+                            size_t j, int dw, int dhi, int tchans, bool flp)
 {
     for (size_t i, redi; i < redw; ++i, redi += tchans) {
-        const size_t ti = cata(i, j, dcw) * tchans;
+        const size_t ti = cata(i, j, dw, dhi, flp) * tchans;
         result[ti .. ti + tchans] = redline[redi .. redi + tchans];
     }
 }
 
-void sling16(in ushort[] redline, ushort[] result, A7Catapult cata, in size_t redw,
-                                        in size_t j, in int dcw, in int tchans)
+void sling16(in ushort[] redline, ushort[] result, A7Catapult cata, size_t redw,
+                                size_t j, int dw, int dhi, int tchans, bool flp)
 {
     for (size_t i, redi; i < redw; ++i, redi += tchans) {
-        const size_t ti = cata(i, j, dcw) * tchans;
+        const size_t ti = cata(i, j, dw, dhi, flp) * tchans;
         result[ti .. ti + tchans] = redline[redi .. redi + tchans];
     }
 }
@@ -624,7 +630,7 @@ ubyte paeth(in ubyte a, in ubyte b, in ubyte c)
     return c;
 }
 
-alias A7Catapult = size_t function(size_t redx, size_t redy, size_t dstw);
+alias A7Catapult = size_t function(size_t redx, size_t redy, size_t dw, size_t dhi, bool flp);
 immutable A7Catapult[7] a7catapults = [
     &a7_red1_to_dst,
     &a7_red2_to_dst,
@@ -635,13 +641,15 @@ immutable A7Catapult[7] a7catapults = [
     &a7_red7_to_dst,
 ];
 
-size_t a7_red1_to_dst(size_t redx, size_t redy, size_t dstw) { return redy*8*dstw + redx*8;     }
-size_t a7_red2_to_dst(size_t redx, size_t redy, size_t dstw) { return redy*8*dstw + redx*8+4;   }
-size_t a7_red3_to_dst(size_t redx, size_t redy, size_t dstw) { return (redy*8+4)*dstw + redx*4; }
-size_t a7_red4_to_dst(size_t redx, size_t redy, size_t dstw) { return redy*4*dstw + redx*4+2;   }
-size_t a7_red5_to_dst(size_t redx, size_t redy, size_t dstw) { return (redy*4+2)*dstw + redx*2; }
-size_t a7_red6_to_dst(size_t redx, size_t redy, size_t dstw) { return redy*2*dstw + redx*2+1;   }
-size_t a7_red7_to_dst(size_t redx, size_t redy, size_t dstw) { return (redy*2+1)*dstw + redx;   }
+size_t a7_red1_to_dst(size_t redx, size_t redy, size_t dw, size_t dhi, bool flp) { return vf(redy*8,   dhi, flp)*dw + redx*8;   }
+size_t a7_red2_to_dst(size_t redx, size_t redy, size_t dw, size_t dhi, bool flp) { return vf(redy*8,   dhi, flp)*dw + redx*8+4; }
+size_t a7_red3_to_dst(size_t redx, size_t redy, size_t dw, size_t dhi, bool flp) { return vf(redy*8+4, dhi, flp)*dw + redx*4;   }
+size_t a7_red4_to_dst(size_t redx, size_t redy, size_t dw, size_t dhi, bool flp) { return vf(redy*4,   dhi, flp)*dw + redx*4+2; }
+size_t a7_red5_to_dst(size_t redx, size_t redy, size_t dw, size_t dhi, bool flp) { return vf(redy*4+2, dhi, flp)*dw + redx*2;   }
+size_t a7_red6_to_dst(size_t redx, size_t redy, size_t dw, size_t dhi, bool flp) { return vf(redy*2,   dhi, flp)*dw + redx*2+1; }
+size_t a7_red7_to_dst(size_t redx, size_t redy, size_t dw, size_t dhi, bool flp) { return vf(redy*2+1, dhi, flp)*dw + redx;     }
+
+size_t vf(size_t dy, size_t dhi, bool flp) { return dy + (dhi - 2*dy) * flp; }
 
 size_t[7] a7_init_redw(in int w)
 {
@@ -790,9 +798,11 @@ ubyte write_idat(ref PNGEncoder ec)
 
     sete(0);
 
-    const size_t sbufsz = ec.w * ec.schans * ec.h;
+    const size_t sbufsz = ec.h * slinesz;
+    const ptrdiff_t sstride = slinesz * VERTICAL_ORIENTATION_WRITE;
+    size_t si = (ec.h - 1) * slinesz * (VERTICAL_ORIENTATION_WRITE == -1);
 
-    for (size_t si; si < sbufsz; si += slinesz) {
+    for (; cast(size_t) si < sbufsz; si += sstride) {
         convert(ec.buf[si .. si + slinesz], cline[1..$]);
 
         // these loops could be merged with some extra space...

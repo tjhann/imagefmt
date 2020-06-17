@@ -120,8 +120,9 @@ ubyte read_tga(Reader* rc, out IFImage image, in int reqchans, in int reqbpc)
     const int tchans         = reqchans ? reqchans : schans;
     const int slinesz        = head.w * schans;
     const int tlinesz        = head.w * tchans;
-    const int tstride        = origin_at_top ? tlinesz : -tlinesz;
-    int ti                   = origin_at_top ? 0 : (head.h-1) * tlinesz;
+    const bool flip          = origin_at_top ^ (VERTICAL_ORIENTATION_READ == 1);
+    const int tstride        = flip ? -tlinesz             : tlinesz;
+    int ti                   = flip ? (head.h-1) * tlinesz : 0;
 
     if (cast(ulong) head.w * head.h * tchans > MAXIMUM_IMAGE_SIZE)
         return ERROR.bigimg;
@@ -276,17 +277,19 @@ ubyte write_tga_idat(Writer* wc, in int w, in int h, in ubyte[] buf, in int scha
 
     auto convert = cast(conv8) getconv(schans, tfmt, 8);
 
-    const size_t slinesz = w * schans;
-    const size_t tlinesz = w * tchans;
-    const size_t maxpckts = (tlinesz + 127) / 128;  // max packets per line
+    const int slinesz = w * schans;
+    const int tlinesz = w * tchans;
+    const int maxpckts = (tlinesz + 127) / 128;  // max packets per line
+    const uint sbufsz = h * slinesz;
+    const int sstride = -slinesz * VERTICAL_ORIENTATION_WRITE;
+    uint si = (h - 1) * slinesz * (VERTICAL_ORIENTATION_WRITE == 1);
 
     ubyte e;
     ubyte[] workbuf    = new_buffer(tlinesz + tlinesz + maxpckts, e);
     ubyte[] tline      = workbuf[0..tlinesz];
     ubyte[] compressed = workbuf[tlinesz .. tlinesz + (tlinesz + maxpckts)];
 
-    const size_t sbufsz = h * slinesz;
-    for (size_t si = (h - 1) * slinesz; si < sbufsz; si -= slinesz) {
+    for (; cast(uint) si < sbufsz; si += sstride) {
         convert(buf[si .. si + slinesz], tline[0..$]);
         const size_t compsz = rle_compress(tline, compressed, w, tchans);
         write_block(wc, compressed[0..compsz]);
