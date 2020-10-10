@@ -263,7 +263,7 @@ ubyte read_chunks(PNGDecoder* dc)
                 dc.transparency[len..$] = 255;
                 read_block(dc.rc, dc.chunkmeta[0..$]);
                 if (dc.rc.fail) return ERROR.stream;
-                dc.crc.put(dc.transparency[0..$]);
+                dc.crc.put(dc.transparency[0..len]);
                 if (dc.crc.finish_be() != dc.chunkmeta[0..4])
                     return ERROR.data;
                 break;
