@@ -157,58 +157,41 @@ ubyte read_tga(Reader* rc, out IFImage image, in int reqchans, in int reqbpc)
             convert(sline[0..$], result[ti .. ti + tlinesz]);
             ti += tstride;
         }
-        if (rc.fail) {
-            _free(result.ptr);
-            result = null;
+    } else {
+        ubyte[4] pixel;
+        int plen = 0;   // packet length
+        bool its_rle = false;
+
+        foreach (_; 0 .. head.h) {
+            int wanted = slinesz;   // fill sline with unpacked data
+            do {
+                if (plen == 0) {
+                    const ubyte phead = read_u8(rc);
+                    its_rle = cast(bool) (phead & 0x80);
+                    plen = ((phead & 0x7f) + 1) * schans; // length in bytes
+                }
+                const int gotten = slinesz - wanted;
+                const int copysize = wanted < plen ? wanted : plen;
+                if (its_rle) {
+                    read_block(rc, pixel[0..schans]);
+                    for (int p = gotten; p < gotten+copysize; p += schans)
+                        sline[p .. p + schans] = pixel[0 .. schans];
+                } else // raw packet
+                    read_block(rc, sline[gotten .. gotten+copysize]);
+                wanted -= copysize;
+                plen -= copysize;
+            } while (wanted);
+
+            convert(sline[0..$], result[ti .. ti + tlinesz]);
+            ti += tstride;
         }
-        _free(sline.ptr);
-
-        image.w = head.w;
-        image.h = head.h;
-        image.c = cast(ubyte) tchans;
-        image.cinfile = cast(ubyte) schans;
-        image.bpc = 8;
-        image.buf8 = result;
-        return e;
     }
-
-    // ----- RLE -----
-
-    ubyte[4] pixel;
-    int plen = 0;   // packet length
-    bool its_rle = false;
-
-    foreach (_; 0 .. head.h) {
-        int wanted = slinesz;   // fill sline with unpacked data
-        do {
-            if (plen == 0) {
-                const ubyte phead = read_u8(rc);
-                its_rle = cast(bool) (phead & 0x80);
-                plen = ((phead & 0x7f) + 1) * schans; // length in bytes
-            }
-            const int gotten = slinesz - wanted;
-            const int copysize = wanted < plen ? wanted : plen;
-            if (its_rle) {
-                read_block(rc, pixel[0..schans]);
-                for (int p = gotten; p < gotten+copysize; p += schans)
-                    sline[p .. p + schans] = pixel[0 .. schans];
-            } else // raw packet
-                read_block(rc, sline[gotten .. gotten+copysize]);
-            wanted -= copysize;
-            plen -= copysize;
-        } while (wanted);
-
-        convert(sline[0..$], result[ti .. ti + tlinesz]);
-        ti += tstride;
-    }
-
-    if (rc.fail)
-        e = ERROR.stream;
 
     _free(sline.ptr);
-    if (e) {
+
+    if (rc.fail) {
         _free(result.ptr);
-        return e;
+        return ERROR.stream;
     }
 
     image.w = head.w;
