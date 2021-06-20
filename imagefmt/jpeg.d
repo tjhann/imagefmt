@@ -453,7 +453,6 @@ ubyte read_scan_header(ref JPEGDecoder dc)
         return dc.rc.fail ? ERROR.stream : ERROR.unsupp;
 
     ubyte[16] buf;
-    ubyte e;
     read_block(dc.rc, buf[0..len-3]);
     if (dc.rc.fail) return ERROR.stream;
 
